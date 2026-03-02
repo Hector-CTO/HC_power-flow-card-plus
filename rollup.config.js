@@ -19,7 +19,36 @@ const serveOptions = {
   },
 };
 
+const sharedPlugins = [
+  minifyHTML(),
+  terser({ output: { comments: false } }),
+  typescript({
+    declaration: false,
+  }),
+  nodeResolve(),
+  json({
+    compact: true,
+  }),
+  commonjs(),
+  babel({
+    exclude: "node_modules/**",
+    babelHelpers: "bundled",
+  }),
+  ...(dev ? [serve(serveOptions)] : [terser()]),
+];
+
+const sharedModuleContext = (id) => {
+  const thisAsWindowForModules = [
+    "node_modules/@formatjs/intl-utils/lib/src/diff.js",
+    "node_modules/@formatjs/intl-utils/lib/src/resolve-locale.js",
+  ];
+  if (thisAsWindowForModules.some((id_) => id.trimRight().endsWith(id_))) {
+    return "window";
+  }
+};
+
 export default [
+  // Original Power Flow Card Plus
   {
     input: ["src/power-flow-card-plus.ts"],
     output: [
@@ -29,31 +58,20 @@ export default [
         inlineDynamicImports: true,
       },
     ],
-    plugins: [
-      minifyHTML(),
-      terser({ output: { comments: false } }),
-      typescript({
-        declaration: false,
-      }),
-      nodeResolve(),
-      json({
-        compact: true,
-      }),
-      commonjs(),
-      babel({
-        exclude: "node_modules/**",
-        babelHelpers: "bundled",
-      }),
-      ...(dev ? [serve(serveOptions)] : [terser()]),
+    plugins: sharedPlugins,
+    moduleContext: sharedModuleContext,
+  },
+  // HC Power Flow Card (isometric 3D)
+  {
+    input: ["src/energy-flow-card/energy-flow-card.ts"],
+    output: [
+      {
+        dir: "dist",
+        format: "es",
+        inlineDynamicImports: true,
+      },
     ],
-    moduleContext: (id) => {
-      const thisAsWindowForModules = [
-        "node_modules/@formatjs/intl-utils/lib/src/diff.js",
-        "node_modules/@formatjs/intl-utils/lib/src/resolve-locale.js",
-      ];
-      if (thisAsWindowForModules.some((id_) => id.trimRight().endsWith(id_))) {
-        return "window";
-      }
-    },
+    plugins: sharedPlugins,
+    moduleContext: sharedModuleContext,
   },
 ];
